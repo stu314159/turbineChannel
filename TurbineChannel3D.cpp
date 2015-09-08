@@ -1,6 +1,9 @@
 #include "TurbineChannel3D.h"
 #include "lattice_vars.h"
+#include <set>
+#include <map>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <sstream>
 #include <stdexcept>
@@ -19,7 +22,7 @@
 
 using namespace std;
 
-TurbineChannel3D::TurbineChannel3D(const int rk, const int sz, const string input_file):
+TurbineChannel3D::TurbineChannel3D(const int rk, const int sz):
 rank(rk), size(sz)
 {
     tag_d = 666; tag_u = 999;
@@ -58,12 +61,7 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
     MPI_File fh_rho, fh_ux, fh_uy, fh_uz;
     MPI_Status mpi_s1, mpi_s2, mpi_s3,mpi_s4;
     
-    //	// create temporary data buffers
-    //	float * rho_l = new float[numEntries];
-    //	float * ux_l = new float[numEntries];
-    //	float * uy_l = new float[numEntries];
-    //	float * uz_l = new float[numEntries];
-    
+        
     const float * RESTRICT fIn;
     int streamNum;
     if (isEven){
@@ -232,10 +230,12 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 		  ux=0;uy=0; uz=u_bc[tid];
 		  //set rho based on uz
 		  rho = (1./(1.-uz))*(2.0*(f6+f11+f12+f13+f14)+(f0+f1+f2+f3+f4));
+
 		}
 		if(onl[tid]==1){
-		  ux=0.; uy=0.; rho=rho_lbm;
-		  uz = -1.+((2.*(f5+f7+f8+f9+f10)+(f0+f1+f2+f3+f4)))/rho;
+		  uz=0.; uy=0.; rho=rho_lbm;
+                  ux = -1.+((2.*(f1+f7+f9+f11+f13)+(f0+f3+f4+f5+f6)))/rho;
+		  //uz = -1.+((2.*(f5+f7+f8+f9+f10)+(f0+f1+f2+f3+f4)))/rho;
 		}
 		if(snl[tid]==1){
 		  ux=0.; uy=0.; uz=0.;
@@ -332,6 +332,7 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 				  1.5*(ux*ux+uy*uy+uz*uz));
 	
 		// if on inlet or outlet, compute and bounce-back non-equilibrium part of f.
+		// see referenecs on regularized boundary conditions for full details on theory.
 		if((inl[tid]==1)|(onl[tid]==1)){
 
 		  float ft1,ft2,ft3,ft4,ft5,ft6,ft7,ft8,ft9,ft10,ft11,ft12,ft13,ft14;
@@ -349,12 +350,13 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 		    //f10, bb_spd=f11
 		    f10=fe10+(f11-fe11); //fIn[10*nnodes+tid]=f10;
 		  }else{
-		    f6=fe6+(f5-fe5); 
-		    f11=fe11+(f10-fe10); 
-		    f12=fe12+(f9-fe9); 
-		    f13=fe13+(f8-fe8); 
-		    f14=fe14+(f7-fe7); 
-
+		    //onl - adjust for unknown velocities: 2,8,10,12,14
+		    //    - bounceback from: 1,13,11,9,7 respectively
+                    f2 = fe2 + (f1-fe1);
+                    f8 = fe8 + (f13-fe13);
+                    f10 = fe10 + (f11-fe11);
+                    f12 = fe12 + (f9-fe9);
+                    f14 = fe14 + (f7-fe7);
 		  }
 		  //ft0=f0-fe0;
 		  ft1=f1-fe1; 
@@ -744,7 +746,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
         firstSlice+=rank;
     }
     lastSlice = firstSlice+numMySlices-1;
-    totalSlices=numMySlices+2*HALO;
+    totalSlices=numMySlices+2*HALO;// add 2 HALO slices (HALO=1)
     nnodes = totalSlices*Nx*Ny;
     
     fEven = new float[nnodes*numSpd];
@@ -774,96 +776,82 @@ void TurbineChannel3D::initialize_local_partition_variables(){
         }
     }
     
+    // populate myGlobalNodes set and globalToLocal map
+    int l_id; //local id    
+    for(int z = firtSlice;z<lastSlice;z++){
+      for(int y = 0;y<Ny;y++){
+        for(int x = 0;x<Nx;x++){
+          tid = x+y*Nx+z*Nx*Ny; // node number
+          l_id = tid+Nx*Ny*HALO; // node number accounting for HALO
+          myGlobalNodes.insert(tid);
+          globalToLocal[tid]=l_id;
+           
+        }
+      }
+    }
+
+
     // initialize all node lists to zero...
-    int tid_l, x,z, y;
     for(int nd=0;nd<nnodes;nd++){
         inl[nd]=0;
         onl[nd]=0;
         snl[nd]=0;
     }
-    // initialize the solid node list
-    y=0;
-    for(int z=0;z<totalSlices;z++){
-        for(int x=0;x<Nx;x++){
-            tid_l=x+y*Nx+z*Nx*Ny;
-            snl[tid_l]=1;
-        }
-    }
-    y=(Ny-1);
-    for(int z=0;z<totalSlices;z++){
-        for(int x=0;x<Nx;x++){
-            tid_l=x+y*Nx+z*Nx*Ny;
-            snl[tid_l]=1;
-        }
-    }
     
-    // near and far wall
-    for(int z=0;z<totalSlices;z++){
-        for(int y=0;y<Ny;y++){
-            x = 0;
-            tid_l = x+y*Nx+z*Nx*Ny;
-            snl[tid_l]=1;
-            x = (Nx-1);
-            tid_l = x+y*Nx+z*Nx*Ny;
-            snl[tid_l]=1;
-        }
+    //inl, onl, snl and u_bc all need to be set based on data given in 
+    //the respecive *.lbm file.  
+   
+    // open snl and read the number of solid nodes
+    int numBCnode;
+    int bcNode;
+   
+    fstream bcFile(snl_file.c_str(),ios::in);
+    bcFile >> numBCnode;
+    for(int i=0;i<numBCnode;i++){
+      bcFile >> bcNode;
+
+      // determine if the solid node is on this partition.
+      if(myGlobalNodes.find(bcNode) != myGlobalNodes.end()){
+         snl[globalToLocal[bcNode]] = 1;
+      }
     }
-    
-    // Due to how the domain is partitioned, the inlet nodes
-    // are all assigned to rank 0 process
-    if(rank==0){
-        z=1; // to account for the HALO nodes on rank 0, this is z=1, not z=0
-        for(int y=1;y<(Ny-1);y++){//<-- skip top and bottom
-            for(int x=1;x<(Nx-1);x++){
-                tid_l = x+y*Nx+z*Nx*Ny;
-                inl[tid_l]=1;
-            }
-        }
+    bcFile.close();
+
+    // follow same pattern for inl 
+    fstream bcFile(inl_file.c_str(),ios::in);
+    bcFile >> numBCnode;
+    for(int i=0;i<numBCnode;i++){
+      bcFile >> bcNode;
+
+      // determine if the solid node is on this partition.
+      if(myGlobalNodes.find(bcNode) != myGlobalNodes.end()){
+         inl[globalToLocal[bcNode]] = 1;
+      }
     }
-    // again, due to the partitioning strategy, all of the outlet nodes
-    // are on the (size-1) partition
-    if(rank==(size-1)){
-        z=totalSlices-1; // again, to account for the HALO at the outlet, this is z = totalSlices-1, not z=totalSlices...
-        for(int y=1;y<(Ny-1);y++){
-            for(int x=1;x<(Nx-1);x++){
-                tid_l=x+y*Nx+z*Nx*Ny;
-                inl[tid_l]=1;
-            }
-        }
+    bcFile.close();
+
+    // follow same pattern for onl
+    fstream bcFile(onl_file.c_str(),ios::in);
+    bcFile >> numBCnode;
+    for(int i=0;i<numBCnode;i++){
+      bcFile >> bcNode;
+
+      // determine if the solid node is on this partition.
+      if(myGlobalNodes.find(bcNode) != myGlobalNodes.end()){
+         onl[globalToLocal[bcNode]] = 1;
+      }
     }
-    
-    // rank 0 partition has the outlet slice on the left halo (due to logical periodicity)
-    if(rank==0){
-        z=0; // inlet halo is he outlet slice, so z=0 on the rank 0 process is the outlet slice.
-        for(int y=1;y<(Ny-1);y++){
-            for(int x=1;x<(Nx-1);x++){
-                tid_l=x+y*Nx+z*Nx*Ny;
-                onl[tid_l]=1;
-            }
-        }
-    }
-    // rank (size-1) has the inlet slice on the right halo. (due to logical periodicity)
-    if(rank==(size-1)){
-        z=totalSlices-2; // because of the HALO, the outlet nodes are at totalSlices-2, not totalSlices-1
-        for(int y=1;y<(Ny-1);y++){
-            for(int x=1;x<(Nx-1);x++){
-                tid_l=x+y*Nx+z*Nx*Ny;
-                onl[tid_l]=1;
-            }
-        }
-    }
+    bcFile.close();
+
     
     // initialize u_bc
-    //float b = ((float)Ny-1.)/2.;
-    //float h;
+   
     for(int z=0;z<totalSlices;z++){
         for(int y=0;y<Ny;y++){
             for(int x=0;x<Nx;x++){
                 tid=x+y*Nx+z*Nx*Ny;
                 if((inl[tid]==1)|(onl[tid]==1)){
-      //              h=((float)y-b)/b;
-      //              u_bc[tid]=umax_lbm*(1.-(h*h));
-                  u_bc[tid]=umax_lbm;
+                     u_bc[tid]=umax_lbm; // constant inlet velocity
                 }else{
                     u_bc[tid]=0.;
                 }

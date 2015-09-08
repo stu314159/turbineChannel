@@ -3,6 +3,9 @@
 
 #include <mpi.h>
 #include <string>
+#include <set>
+#include <map>
+
 #define HALO 1
 
 using namespace std;
@@ -56,6 +59,9 @@ public:
 	int nd_m, nd_p;
 	int * snl, * inl, * onl;
 
+        set<int> myGlobalNodes;
+        map<int,int> globalToLocal;
+
 	// MPI communication info
 	int firstNdm, lastNdm, firstNdp, lastNdp, numHALO;
 	
@@ -68,7 +74,7 @@ public:
 	int offset, numEntries;
 	float * rho_l, *ux_l, *uy_l, *uz_l;
 
-	TurbineChannel3D(const int rank, const int size, const string input_file);
+	TurbineChannel3D(const int rank, const int size);
   ~TurbineChannel3D();
   void write_data(MPI_Comm comm, bool isEven);
   void take_lbm_timestep(bool isEven, MPI_Comm comm);
