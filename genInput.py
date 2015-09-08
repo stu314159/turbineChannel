@@ -7,16 +7,13 @@ import scipy.io
 """
 Input file generator for the LBM code for 3D flow past an obstacle whose geometry is described
 by 'turbine_blade.mat'
-
 Num_ts = total number of LBM time steps to execute
 ts_rep_frequency = time-step reporting frequency. (LBM code gives periodic updates on progress)
 Warmup_ts = number of time steps to take before recording data
 plot_freq = number of time-steps between data dumps on pressure and velocity
 Re = Flow Reynolds number
 Cs = Turbulence model parameter
-
 Some suggested problem inputs:
-
 To compare with non-turbulent version
 Num_ts = 2000
 ts_rep_freq = 1000
@@ -25,7 +22,6 @@ plot_freq = 500
 Re = 67
 dt = .0025
 Cs = 0
-
 For some initial problem testing:
 Num_ts = 30000
 ts_rep_freq = 1000
@@ -34,12 +30,9 @@ plot_freq = 10000
 Re = 5000
 dt = 0.0005
 Cs = 2
-
 For longer testing with turbulent flow simulations that you expect to run stably,
 conduct an appropriate warmup period (you should determine this with preliminary runs)
 followed by a comparatively short number of time steps during which you collect data frequently.
-
-
 """
 
 
@@ -76,7 +69,9 @@ Ly_p = float(turb_input['Ly_p'])
 Lz_p = float(turb_input['Lz_p'])
 Lo = float(turb_input['Lo'])
 Ny_divs = int(turb_input['Ny_divs'])
-obstList = list((turb_input['gnn']).flatten())
+snl = list((turb_input['snl']).flatten())
+inl = list((turb_input['inl']).flatten())
+onl = list((turb_input['onl']).flatten())
 
 Ny = math.ceil((Ny_divs-1)*(Ly_p/Lo))+1
 Nx = math.ceil((Ny_divs-1)*(Lx_p/Lo))+1
@@ -94,15 +89,33 @@ XX = np.reshape(X,numEl)
 YY = np.reshape(Y,numEl)
 ZZ = np.reshape(Z,numEl)
 
-print 'There are %d nodes in the obstacle'%len(obstList)
+print 'There are %d nodes in the solid node list'%len(snl)
 print 'Writing those nodes to file'
 # now write this obstList to file.
-obstFilename = 'obst_file.lbm'
+obstFilename = 'snl.lbm'
 obstFile = open(obstFilename,'w')
-obstFile.write('%i \n'%len(obstList))
-for i in range(len(obstList)):
-    obstFile.write('%i \n'%obstList[i])
+obstFile.write('%i \n'%len(snl))
+for i in range(len(snl)):
+    obstFile.write('%i \n'%snl[i])
 obstFile.close()
+
+print 'There are %d nodes in the inlet node list'%len(inl)
+print 'Writing those nodes to file'
+inletFileName = 'inl.lbm'
+inletFile = open(inletFileName,'w')
+inletFile.write('%i \n'%len(inl))
+for i in range(len(inl)):
+    inletFile.write('%i \n'%inl[i])
+inletFile.close()
+
+print 'There are %d nodes in the outlet node list'%len(onl)
+print 'Writing those nodes to file'
+outletFileName = 'onl.lbm'
+outletFile = open(outletFileName,'w')
+outletFile.write('%i \n'%onl[i])
+for i in range(len(onl)):
+    outletFile.write('%i \n'%onl[i])
+outletFile.close()
 
 
 rho_p = 1000. # physical density
@@ -176,6 +189,3 @@ if run_dec!='n' and run_dec!='N':
     
 else:
     print 'Run aborted.  Better luck next time!'
-    
-    
-    
