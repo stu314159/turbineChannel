@@ -26,7 +26,7 @@ TurbineChannel3D::TurbineChannel3D(const int rk, const int sz):
 rank(rk), size(sz)
 {
     tag_d = 666; tag_u = 999;
-    read_input_file(input_file);
+    read_input_file(params_file);
     initialize_lattice_data();
     initialize_local_partition_variables();
     initialize_mpi_buffers();
@@ -55,7 +55,7 @@ TurbineChannel3D::~TurbineChannel3D(){
 
 void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
     
-   stringstream ts_ind;
+    stringstream ts_ind;
     string ts_ind_str;
     string density_fn, ux_fn, uy_fn, uz_fn;
     MPI_File fh_rho, fh_ux, fh_uy, fh_uz;
@@ -165,10 +165,8 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 
     void TurbineChannel3D::D3Q15_process_slices(bool isEven, const int firstSlice, const int lastSlice, int streamNum, int waitNum){
     
-    // this monstrosity needs to be change into something more simple and clear.
-    // it performs on the GPU but is rather unmaintainable.
     
-     const float * RESTRICT fIn;
+    const float * RESTRICT fIn;
     float * RESTRICT fOut;
     int writeWaitNum;
     
@@ -234,8 +232,7 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 		}
 		if(onl[tid]==1){
 		  uz=0.; uy=0.; rho=rho_lbm;
-                  ux = -1.+((2.*(f1+f7+f9+f11+f13)+(f0+f3+f4+f5+f6)))/rho;
-		  //uz = -1.+((2.*(f5+f7+f8+f9+f10)+(f0+f1+f2+f3+f4)))/rho;
+                  ux = -1.+((2.*(f1+f7+f9+f11+f13)+(f0+f3+f4+f5+f6)))/rho;		 
 		}
 		if(snl[tid]==1){
 		  ux=0.; uy=0.; uz=0.;
@@ -724,33 +721,36 @@ void TurbineChannel3D::take_lbm_timestep(bool isEven, MPI_Comm comm){
 void TurbineChannel3D::initialize_mpi_buffers(){
     // integer for arithmetic into pointer arrays for nodes I need to
     // communicate to neighbors.
-    firstNdm = Nx*Ny*HALO;
-    lastNdm = Nx*Ny*(HALO+1);
-    firstNdp = nnodes-2*(Nx*Ny*HALO);
-    lastNdp = nnodes-(Nx*Ny*HALO);
+  firstNdm = Nx*Ny*HALO; // first node index on the lower boundary
+  lastNdm = Nx*Ny*(HALO+1); // last node index on the lower boundary
+  firstNdp = nnodes-2*(Nx*Ny*HALO); //first node index on the upper boundary 
+  lastNdp = nnodes-(Nx*Ny*HALO); // last node index on the upper boundary
     
     
     
-    numHALO = (Nx*Ny*numPspeeds*HALO);
+  numHALO = (Nx*Ny*numPspeeds*HALO); // number of nodes in each halo region
     
-    ghost_in_m = new float[Nx*Ny*numMspeeds*HALO];
-    ghost_out_m = new float[Nx*Ny*numMspeeds*HALO];
-    ghost_in_p = new float[Nx*Ny*numPspeeds*HALO];
-    ghost_out_p = new float[Nx*Ny*numPspeeds*HALO];
-    offset = firstSlice*Nx*Ny*sizeof(float);
-    numEntries = numMySlices*Nx*Ny;
+  ghost_in_m = new float[Nx*Ny*numMspeeds*HALO]; // buffer to hold incoming halo data from m neighbor
+  ghost_out_m = new float[Nx*Ny*numMspeeds*HALO]; // buffer to hold outgoing halo data destined to m neighbor.
+  ghost_in_p = new float[Nx*Ny*numPspeeds*HALO]; // buffer to hold incoming halo data from p neighbor
+  ghost_out_p = new float[Nx*Ny*numPspeeds*HALO]; // buffer to hold outgoing halo data destined to p neighbor.
+  offset = firstSlice*Nx*Ny*sizeof(float); // offset for writing into data file
+  numEntries = numMySlices*Nx*Ny; // size of entry for data file
     
-    rho_l = new float[numEntries];
-    ux_l = new float[numEntries];
-    uy_l = new float[numEntries];
-    uz_l = new float[numEntries];
+  rho_l = new float[numEntries]; // buffer to hold output data destined for data file
+  ux_l = new float[numEntries]; // ditto
+  uy_l = new float[numEntries]; // ditto
+  uz_l = new float[numEntries]; // ditto
 }
 
 void TurbineChannel3D::initialize_local_partition_variables(){
+
+  // compute number of slices for this patition
     numMySlices = Nz/size;
     if(rank<(Nz%size))
     numMySlices+=1;
     
+// identify first and last slice and count the total number of nodes (including HALO)
     firstSlice=(Nz/size)*rank;
     if((Nz%size)<rank){
         firstSlice+=(Nz%size);
@@ -761,12 +761,15 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     totalSlices=numMySlices+2*HALO;// add 2 HALO slices (HALO=1)
     nnodes = totalSlices*Nx*Ny;
     
+    // allocate memory for dependent variables and BC arrays
     fEven = new float[nnodes*numSpd];
     fOdd = new float[nnodes*numSpd];
     snl = new int[nnodes];
     inl = new int[nnodes];
     onl = new int[nnodes];
     u_bc = new float[nnodes];
+
+    // identify node to left (nd_m) and node to right (nd_p)
     nd_m = rank-1;
     if(nd_m<0)
     nd_m=(size-1);
@@ -775,7 +778,9 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     if(nd_p==size)
     nd_p=0;
     
-    // initialize the variables
+
+
+    // initialize dependent variable arrays
     int tid;
     for(int z=0; z<totalSlices;z++){
         for(int y=0;y<Ny;y++){
@@ -803,7 +808,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     }
 
 
-    // initialize all node lists to zero...
+    // initialize all boundary condition node lists to zero...
     for(int nd=0;nd<nnodes;nd++){
         inl[nd]=0;
         onl[nd]=0;
@@ -813,10 +818,11 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     //inl, onl, snl and u_bc all need to be set based on data given in 
     //the respecive *.lbm file.  
    
-    // open snl and read the number of solid nodes
+   
     int numBCnode;
     int bcNode;
    
+    // set snl
     fstream bcFile(snl_file.c_str(),ios::in);
     bcFile >> numBCnode;
     for(int i=0;i<numBCnode;i++){
@@ -829,26 +835,26 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     }
     bcFile.close();
 
-    // follow same pattern for inl 
+    // set inl 
     fstream bcFile(inl_file.c_str(),ios::in);
     bcFile >> numBCnode;
     for(int i=0;i<numBCnode;i++){
       bcFile >> bcNode;
 
-      // determine if the solid node is on this partition.
+      // determine if the inlet node is on this partition.
       if(myGlobalNodes.find(bcNode) != myGlobalNodes.end()){
          inl[globalToLocal[bcNode]] = 1;
       }
     }
     bcFile.close();
 
-    // follow same pattern for onl
+    // set onl
     fstream bcFile(onl_file.c_str(),ios::in);
     bcFile >> numBCnode;
     for(int i=0;i<numBCnode;i++){
       bcFile >> bcNode;
 
-      // determine if the solid node is on this partition.
+      // determine if the outlet node is on this partition.
       if(myGlobalNodes.find(bcNode) != myGlobalNodes.end()){
          onl[globalToLocal[bcNode]] = 1;
       }
@@ -862,7 +868,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
         for(int y=0;y<Ny;y++){
             for(int x=0;x<Nx;x++){
                 tid=x+y*Nx+z*Nx*Ny;
-                if((inl[tid]==1)|(onl[tid]==1)){
+                if((inl[tid]==1)){
                      u_bc[tid]=umax_lbm; // constant inlet velocity
                 }else{
                     u_bc[tid]=0.;
@@ -897,7 +903,7 @@ void TurbineChannel3D::read_input_file(const string input_file){
 void TurbineChannel3D::initialize_lattice_data(){
     switch(LatticeType){
         case(1):
-        //numSpd=15;
+        
         ex = ex15;
         ey = ey15;
         ez = ez15;
