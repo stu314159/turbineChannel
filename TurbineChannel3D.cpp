@@ -439,22 +439,34 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 		    
 		float omega = 1./(3.*(nu+nu_e)+0.5); //<-- shadows class data member this->omega
 
-		//everyone relax...
-		f0=f0-omega*(f0-fe0);
-		f1=f1-omega*(f1-fe1);
-		f2=f2-omega*(f2-fe2);
-		f3=f3-omega*(f3-fe3);
-		f4=f4-omega*(f4-fe4);
-		f5=f5-omega*(f5-fe5);
-		f6=f6-omega*(f6-fe6);
-		f7=f7-omega*(f7-fe7);
-		f8=f8-omega*(f8-fe8);
-		f9=f9-omega*(f9-fe9);
-		f10=f10-omega*(f10-fe10);
-		f11=f11-omega*(f11-fe11);
-		f12=f12-omega*(f12-fe12);
-		f13=f13-omega*(f13-fe13);
-		f14=f14-omega*(f14-fe14);
+		//everyone (except solid nodes) relax...
+                if(SNL != 1){
+		  f0=f0-omega*(f0-fe0);
+		  f1=f1-omega*(f1-fe1);
+		  f2=f2-omega*(f2-fe2);
+		  f3=f3-omega*(f3-fe3);
+		  f4=f4-omega*(f4-fe4);
+		  f5=f5-omega*(f5-fe5);
+		  f6=f6-omega*(f6-fe6);
+		  f7=f7-omega*(f7-fe7);
+		  f8=f8-omega*(f8-fe8);
+		  f9=f9-omega*(f9-fe9);
+		  f10=f10-omega*(f10-fe10);
+		  f11=f11-omega*(f11-fe11);
+		  f12=f12-omega*(f12-fe12);
+		  f13=f13-omega*(f13-fe13);
+		  f14=f14-omega*(f14-fe14);
+                } else {
+                    // snl bounce-back
+                    cu = f1; f1 = f2; f2 = cu;
+                    cu = f3; f3 = f4; f4 = cu;
+                    cu = f5; f5 = f6; f6 = cu;
+                    cu = f7; f7 = f14; f14 = cu;
+                    cu = f8; f8 = f13; f13 = cu;
+                    cu = f9; f9 = f12; f12 = cu;
+                    cu = f10; f10 = f11; f11 = cu; 
+                }
+
 		// stream data
                 
                 //speed 0 ex=ey=ez=0
