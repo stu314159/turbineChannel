@@ -10,8 +10,8 @@ endif
 
 
 
-SOURCES= wmBrick3D.cpp OpenChannel3D.cpp WallMountedBrick.cpp
-OBJECTS=wmBrick3D.o OpenChannel3D.o WallMountedBrick.o workArounds.o
+SOURCES= turbineSim.cpp TurbineChannel3D.cpp
+OBJECTS=turbineSim.o TurbineChannel3D.o  workArounds.o
 LIBS=
 
 ifeq ($(USE_NVTX),1)
@@ -19,7 +19,7 @@ ifeq ($(USE_NVTX),1)
 	MPI_FLAGS+= -DUSE_NVTX
 endif
 
-TARGET=WMBrick3D
+TARGET=turbineSim
 
 %.o: %.cpp
 	$(MPI_CC) $(MPI_FLAGS) -c $^
