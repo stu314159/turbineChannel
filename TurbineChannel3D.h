@@ -8,6 +8,8 @@
 
 #define HALO 1
 
+#define RESTRICT __restrict
+
 using namespace std;
 
 class TurbineChannel3D{
@@ -21,10 +23,10 @@ public:
 	int tag_d, tag_u;
 
 	//input files
-        static const string params_file = "params.lbm";
-        static const string inl_file = "inl.lbm";
-        static const string onl_file = "onl.lbm";
-        static const string snl_file = "snl.lbm";
+        static const string params_file;
+        static const string inl_file;
+        static const string onl_file;
+        static const string snl_file;
 
 	//input data
 	int LatticeType;
@@ -74,6 +76,13 @@ public:
 	int offset, numEntries;
 	float * rho_l, *ux_l, *uy_l, *uz_l;
 
+        // output filename components
+	string densityFileStub;		// filename for density values
+	string fileSuffix;		// std suffix; e.g. .b_dat
+	string ux_FileStub;		// for x values
+	string uy_FileStub;		// for y values
+	string uz_FileStub;		// for z values
+
 	TurbineChannel3D(const int rank, const int size);
   ~TurbineChannel3D();
   void write_data(MPI_Comm comm, bool isEven);
@@ -92,12 +101,12 @@ public:
   void initialize_local_partition_variables();
   void initialize_mpi_buffers();
   void D3Q15_process_slices(bool isEven, const int firstSlice,
-		  const int lastSlice);
-  void stream_out_collect(bool isEven,const int z_start,float * buff_out, 
-      const int numStreamSpeeds, const int * streamSpeeds);
+		  const int lastSlice, int streamNum, int waitNum);
+  void stream_out_collect(bool isEven,const int z_start,float * RESTRICT buff_out, 
+      const int numStreamSpeeds, const int * RESTRICT streamSpeeds, int streamNum);
   void stream_in_distribute(bool isEven,const int z_start,
-			const float * buff_in, const int numStreamSpeeds,
-			const int * streamSpeeds);
+			const float * RESTRICT buff_in, const int numStreamSpeeds,
+			const int * RESTRICT streamSpeeds, int streamNum);
 
 
 

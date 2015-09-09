@@ -2,7 +2,7 @@
 *.o
 *.cub
 *.ptx
-WMBrick3D
+turbineSim
 *.*~
 *~
 *.b_dat

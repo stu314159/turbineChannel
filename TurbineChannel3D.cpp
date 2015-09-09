@@ -22,6 +22,11 @@
 
 using namespace std;
 
+const string TurbineChannel3D::params_file="params.lbm";
+const string TurbineChannel3D::snl_file="snl.lbm";
+const string TurbineChannel3D::inl_file="inl.lbm";
+const string TurbineChannel3D::onl_file="onl.lbm";
+
 TurbineChannel3D::TurbineChannel3D(const int rk, const int sz):
 rank(rk), size(sz)
 {
@@ -161,6 +166,7 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
       
       vtk_ts++; // increment the dump counter...
       nvtxRangePop();
+   }
 }
 
     void TurbineChannel3D::D3Q15_process_slices(bool isEven, const int firstSlice, const int lastSlice, int streamNum, int waitNum){
@@ -437,7 +443,7 @@ void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
 		float omega = 1./(3.*(nu+nu_e)+0.5); //<-- shadows class data member this->omega
 
 		//everyone (except solid nodes) relax...
-                if(SNL != 1){
+                if(snl[tid]!= 1){
 		  f0=f0-omega*(f0-fe0);
 		  f1=f1-omega*(f1-fe1);
 		  f2=f2-omega*(f2-fe2);
@@ -795,7 +801,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     
     // populate myGlobalNodes set and globalToLocal map
     int l_id; //local id    
-    for(int z = firtSlice;z<lastSlice;z++){
+    for(int z = firstSlice;z<lastSlice;z++){
       for(int y = 0;y<Ny;y++){
         for(int x = 0;x<Nx;x++){
           tid = x+y*Nx+z*Nx*Ny; // node number
@@ -836,7 +842,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     bcFile.close();
 
     // set inl 
-    fstream bcFile(inl_file.c_str(),ios::in);
+    bcFile.open(inl_file.c_str(),ios::in);
     bcFile >> numBCnode;
     for(int i=0;i<numBCnode;i++){
       bcFile >> bcNode;
@@ -849,7 +855,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     bcFile.close();
 
     // set onl
-    fstream bcFile(onl_file.c_str(),ios::in);
+    bcFile.open(onl_file.c_str(),ios::in);
     bcFile >> numBCnode;
     for(int i=0;i<numBCnode;i++){
       bcFile >> bcNode;
