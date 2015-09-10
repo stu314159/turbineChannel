@@ -3,10 +3,10 @@
 more automated generation of PBS jobfile 
 
 """
-jobfileName = 'wmb_jobfile.pbs'
-executableName = 'WMBrick3D'
+jobfileName = 'turbineSim_jobfile.pbs'
+executableName = 'turbineSim'
 
-jobName = 'wmb_MPI_N32P8' # must be 15 characters or less
+jobName = 'ts_test' # must be 15 characters or less
 nnodes = 32
 ppn = 8 # for LBM jobs on the Cray XC30 machines, 8 ppn seems to saturate memory bandwidth.
 mpi_procs_per_node = ppn # only change this if you need more memory per process.
@@ -16,7 +16,7 @@ queue = 'standard'
 
 proc_script='process_lbm_data.py'
 
-filesToCopy=[ executableName, 'obst_file.lbm','params.lbm',proc_script,'vtkHelper.py']
+filesToCopy=[ executableName, 'snl.lbm','inl.lbm','onl.lbm','params.lbm',proc_script,'vtkHelper.py']
 
 
 
