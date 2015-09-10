@@ -12,24 +12,19 @@ ts_rep_frequency = time-step reporting frequency. (LBM code gives periodic updat
 Warmup_ts = number of time steps to take before recording data
 plot_freq = number of time-steps between data dumps on pressure and velocity
 Re = Flow Reynolds number
+dt = time steps size
 Cs = Turbulence model parameter
 Some suggested problem inputs:
-To compare with non-turbulent version
-Num_ts = 2000
-ts_rep_freq = 1000
-Warmup_ts = 0
-plot_freq = 500
-Re = 67
-dt = .0025
-Cs = 0
-For some initial problem testing:
-Num_ts = 30000
-ts_rep_freq = 1000
-Warmup_ts = 0
-plot_freq = 10000
-Re = 5000
-dt = 0.0005
-Cs = 2
+
+Num_ts: 10000
+ts_rep_freq: 1000
+Warmup_ts: 0
+plot_freq: 2000
+Re: 20000
+dt: .002
+Cs: 11
+
+
 For longer testing with turbulent flow simulations that you expect to run stably,
 conduct an appropriate warmup period (you should determine this with preliminary runs)
 followed by a comparatively short number of time steps during which you collect data frequently.

@@ -3,6 +3,7 @@
 *.cub
 *.ptx
 turbineSim
+*.mat
 *.*~
 *~
 *.b_dat
