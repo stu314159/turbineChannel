@@ -7,12 +7,12 @@ jobfileName = 'turbineSim_jobfile.pbs'
 executableName = 'turbineSim'
 
 jobName = 'ts_test' # must be 15 characters or less
-nnodes = 32
-ppn = 8 # for LBM jobs on the Cray XC30 machines, 8 ppn seems to saturate memory bandwidth.
-mpi_procs_per_node = ppn # only change this if you need more memory per process.
-walltime='04:00:00'
+nnodes = 8
+ppn = 10 # for LBM jobs on the Cray XC30 machines, 8 ppn seems to saturate memory bandwidth.
+mpi_procs_per_node =1 # only change this if you need more memory per process.
+walltime='01:00:00'
 platform='SHEPARD'
-queue = 'standard'
+queue = 'gpu'
 
 proc_script='process_lbm_data.py'
 
@@ -33,7 +33,7 @@ jf = open(jobfileName,'w')
 jf.write('#!/bin/bash \n') # the shell
 jf.write('#PBS -A %s \n'%proj_id) # project identifier
 jf.write('#PBS -q %s \n'%queue) # specify queue
-jf.write('#PBS -l select=%d:ncpus=%d:mpiprocs=%d \n'% \
+jf.write('#PBS -l select=%d:ncpus=%d:accelerator_model=Tesla_K40s:mpiprocs=%d \n'% \
          (nnodes,ppn,mpi_procs_per_node))
 jf.write('#PBS -l walltime=%s \n'%walltime)
 jf.write('#PBS -l ccm=1 \n') # specify cluster compatibility mode.  Why wouldn't you?
@@ -60,7 +60,7 @@ for s in filesToCopy:
 #jf.write('cd $JOBDIR \n')  #<--- this was an error
 
 # invoke execution
-jf.write('aprun -n %d ./%s \n'%(mpi_procs,executableName))
+jf.write('aprun -B ./%s \n'%(executableName))
 #jf.write('python ./%s \n'%proc_script)
 
 # create job to cleanup and archive data

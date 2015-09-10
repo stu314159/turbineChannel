@@ -766,6 +766,8 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     lastSlice = firstSlice+numMySlices-1;
     totalSlices=numMySlices+2*HALO;// add 2 HALO slices (HALO=1)
     nnodes = totalSlices*Nx*Ny;
+
+
     
     // allocate memory for dependent variables and BC arrays
     fEven = new float[nnodes*numSpd];
@@ -805,7 +807,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
       for(int y = 0;y<Ny;y++){
         for(int x = 0;x<Nx;x++){
           tid = x+y*Nx+z*Nx*Ny; // node number
-          l_id = tid+Nx*Ny*HALO; // node number accounting for HALO
+          l_id = ((z-firstSlice)*Nx*Ny+x+y*Nx)+Nx*Ny*HALO; // node number accounting for HALO
           myGlobalNodes.insert(tid);
           globalToLocal[tid]=l_id;
            
@@ -840,6 +842,8 @@ void TurbineChannel3D::initialize_local_partition_variables(){
       }
     }
     bcFile.close();
+
+cout << "rank: " << rank << " establishing snl lists " << endl;
 
     // set inl 
     bcFile.open(inl_file.c_str(),ios::in);
