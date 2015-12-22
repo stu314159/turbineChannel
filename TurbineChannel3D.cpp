@@ -770,7 +770,7 @@ void TurbineChannel3D::initialize_mpi_buffers(){
 }
 
 void TurbineChannel3D::initialize_local_partition_variables(){
-
+    int tstRank = 0; // rank where I am currently testing
   // compute number of slices for this patition
     numMySlices = Nz/size;
     if(rank<(Nz%size))
@@ -816,6 +816,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
                 tid=x+y*Nx+z*Nx*Ny;
                 for(int spd=0;spd<numSpd;spd++){
                     fEven[getIdx(nnodes, numSpd, tid,spd)]=rho_lbm*w[spd];
+                    fOdd[getIdx(nnodes,numSpd,tid,spd)]=rho_lbm*w[spd];
                 }
             }
         }
@@ -823,11 +824,13 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     
     // populate myGlobalNodes set and globalToLocal map
     int l_id; //local id    
-    for(int z = firstSlice;z<lastSlice;z++){
+    for(int z = firstSlice;z<=lastSlice;z++){
       for(int y = 0;y<Ny;y++){
         for(int x = 0;x<Nx;x++){
           tid = x+y*Nx+z*Nx*Ny; // node number
           l_id = ((z-firstSlice)*Nx*Ny+x+y*Nx)+Nx*Ny*HALO; // node number accounting for HALO
+
+          
           myGlobalNodes.insert(tid);
           globalToLocal[tid]=l_id;
            
@@ -850,6 +853,8 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     int numBCnode;
     int bcNode;
    
+
+    
     // set snl
     fstream bcFile(snl_file.c_str(),ios::in);
     bcFile >> numBCnode;
@@ -863,7 +868,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     }
     bcFile.close();
 
-cout << "rank: " << rank << " establishing snl lists " << endl;
+  
 
     // set inl 
     bcFile.open(inl_file.c_str(),ios::in);
