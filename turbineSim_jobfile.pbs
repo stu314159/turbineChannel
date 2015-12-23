@@ -4,7 +4,7 @@
 #PBS -l select=4:ncpus=10:accelerator_model=Tesla_K40s:mpiprocs=1 
 #PBS -l walltime=01:00:00 
 #PBS -l ccm=1 
-#PBS -N L_chanTest 
+#PBS -N newChanTst 
 #PBS -j oe 
 #PBS -V 
 #PBS -S /bin/bash 
