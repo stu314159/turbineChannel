@@ -56,8 +56,8 @@ p_conv_fact = float(input_data.readline())
 
 input_data.close()
 
-u_conv_fact = l_conv_fact/t_conv_fact;
-
+#u_conv_fact = l_conv_fact/t_conv_fact;
+u_conv_fact = t_conv_fact/l_conv_fact;
 nnodes = Nx*Ny*Nz
 
 # compute geometric data only once

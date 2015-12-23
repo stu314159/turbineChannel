@@ -116,8 +116,8 @@ for i in range(len(onl)):
 outletFile.close()
 
 
-rho_p = 1000. # physical density
-nu_p = 0.001/rho_p #physical kinematic viscosity
+rho_p = 1260. # physical density
+nu_p = 1.49/rho_p #physical kinematic viscosity
 
 # non-dimensionalization
 Uo = nu_p*Re/Lo
@@ -131,7 +131,7 @@ u_lbm = (dt/dx)*Ud
 nu_lbm = (dt/(dx**2))*nu_d
 omega = 1./(3.*nu_lbm+0.5)
 
-u_conv_fact = (dx/dt)*(Lo/To)
+u_conv_fact = (dt/dx)*(To/Lo)
 t_conv_fact = (dt*To)
 l_conv_fact = dx*Lo
 p_conv_fact = (((l_conv_fact/t_conv_fact)**2)*(1./3.))*(l_conv_fact**3)
