@@ -61,9 +61,9 @@ u_conv_fact = t_conv_fact/l_conv_fact;
 nnodes = Nx*Ny*Nz
 
 # compute geometric data only once
-x = np.linspace(0.,Lx_p,Nx).astype(np.float32);
-y = np.linspace(0.,Ly_p,Ny).astype(np.float32);
-z = np.linspace(0.,Lz_p,Nz).astype(np.float32);
+x = np.linspace(0.,Lx_p,Nx).astype(np.float64);
+y = np.linspace(0.,Ly_p,Ny).astype(np.float64);
+z = np.linspace(0.,Lz_p,Nz).astype(np.float64);
 numEl = Nx*Ny*Nz
 Y,Z,X = np.meshgrid(y,z,x);
 
@@ -87,10 +87,10 @@ for i in range(rank,nDumps,size):
     ux_fn = 'ux'+str(i)+'.b_dat'
     uy_fn = 'uy'+str(i)+'.b_dat'
     uz_fn = 'uz'+str(i)+'.b_dat'
-    ux = np.fromfile(ux_fn,dtype=np.float32)
-    uy = np.fromfile(uy_fn,dtype=np.float32)
-    uz = np.fromfile(uz_fn,dtype=np.float32)
-    pressure = np.fromfile(rho_fn,dtype=np.float32)
+    ux = np.fromfile(ux_fn,dtype=np.float32).astype(np.float64)
+    uy = np.fromfile(uy_fn,dtype=np.float32).astype(np.float64)
+    uz = np.fromfile(uz_fn,dtype=np.float32).astype(np.float64)
+    pressure = np.fromfile(rho_fn,dtype=np.float32).astype(np.float64)
     
     # convert velocity to physical units
     ux *= u_conv_fact
