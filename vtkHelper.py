@@ -67,7 +67,8 @@ def saveScalarStructuredGridVTK_binary(scalar,scalar_name,x,y,z,filename,dims):
     
      # append another ASCII sub header for the scalar data
     file = open(filename,'a')
-    file.write('\nSCALARS %s int\n'%scalar_name)
+    file.write('POINT_DATA %d \n'%numEl)
+    file.write('SCALARS %s int\n'%scalar_name)
     file.write('LOOKUP_TABLE default\n')
     file.close()
     
