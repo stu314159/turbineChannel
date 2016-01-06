@@ -78,6 +78,28 @@ TurbineChannel3D::~TurbineChannel3D(){
     
 }
 
+void TurbineChannel3D::write_bc_arrays(MPI_Comm comm){
+  MPI_File fh_snl, fh_inl, fh_onl;
+  MPI_Status mpi_s1, mpi_s2, mpi_s3;
+  // open MPI data file
+    MPI_File_open(comm,"snl.b_dat",
+      MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fh_snl);
+    MPI_File_open(comm,"inl.b_dat",
+      MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fh_inl);
+    MPI_File_open(comm,"onl.b_dat",
+      MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fh_onl);
+  // write your chunk of the data
+    int offset_s = firstSlice*Nx*Ny*sizeof(int);
+    MPI_File_write_at(fh_snl,offset_s,snl+HALO*Nx*Ny,numEntries,MPI_INT,&mpi_s1);
+    MPI_File_write_at(fh_inl,offset_s,inl+HALO*Nx*Ny,numEntries,MPI_INT,&mpi_s2);
+    MPI_File_write_at(fh_onl,offset_s,onl+HALO*Nx*Ny,numEntries,MPI_INT,&mpi_s3);
+
+  // close the MPI data file
+    MPI_File_close(&fh_snl);
+    MPI_File_close(&fh_inl);
+    MPI_File_close(&fh_onl);
+}
+
 void TurbineChannel3D::write_data(MPI_Comm comm, bool isEven){
     
     stringstream ts_ind;
@@ -827,7 +849,7 @@ void TurbineChannel3D::initialize_local_partition_variables(){
     for(int z = firstSlice;z<=lastSlice;z++){
       for(int y = 0;y<Ny;y++){
         for(int x = 0;x<Nx;x++){
-          tid = x+y*Nx+z*Nx*Ny; // node number
+          tid = x+y*Nx+z*Nx*Ny; // Global node number
           l_id = ((z-firstSlice)*Nx*Ny+x+y*Nx)+Nx*Ny*HALO; // node number accounting for HALO
 
           

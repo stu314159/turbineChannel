@@ -27,8 +27,11 @@ int main(int argc, char * argv[])
     if(rank==0){
         cout<< "Problem initialized!" << endl;
     }
+
+    // write out bc data
+    pp.write_bc_arrays(MPI_COMM_WORLD);    
     
-    
+
     #ifdef CRAYPAT
     PAT_record(PAT_STATE_ON);
     #endif
