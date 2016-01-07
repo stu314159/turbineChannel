@@ -116,8 +116,11 @@ for i in range(len(onl)):
 outletFile.close()
 
 
-rho_p = 1260. # physical density
-nu_p = 1.49/rho_p #physical kinematic viscosity
+#rho_p = 1260. # physical density
+#nu_p = 1.49/rho_p #physical kinematic viscosity
+
+rho_p = 1000.
+nu_p = 1.0e-3/rho_p
 
 # non-dimensionalization
 Uo = nu_p*Re/Lo
