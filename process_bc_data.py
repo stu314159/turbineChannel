@@ -1,4 +1,5 @@
-#!/p/home/sblair/anaconda/bin/python
+#!/home/sblair/anaconda/bin/python
+###!/p/home/sblair/anaconda/bin/python
 """
 Data processing script for LBM binary data files holding BC data.
 
@@ -30,7 +31,7 @@ size = comm.Get_size()
 
 import sys
 sys.path.insert(1,'.')
-from vtkHelper import saveStructuredGridVTK_binary as writeVTK
+from vtkHelper import saveScalarStructuredGridVTK_binary as writeVTK
 
 # Information about the LBM run that produced the data - I should get this from params.lbm
 
@@ -81,8 +82,7 @@ elif rank==1:
   dat_name = 'inl';
 elif rank==2:
   dat_name = 'onl';
-else:
-  # raise an error
+
 in_fn = dat_name + '.b_dat'
 out_fn = dat_name + '.vtk'
 my_dat = np.fromfile(in_fn,dtype=np.int32)
