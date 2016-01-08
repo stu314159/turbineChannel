@@ -95,10 +95,10 @@ for i in range(rank,nDumps,size):
     pressure = np.fromfile(rho_fn,dtype=np.float32).astype(np.float64)
     
     # convert velocity to physical units
-    ux *= u_conv_fact
-    uy *= u_conv_fact
-    uz *= u_conv_fact
-    pressure *= p_conv_fact
+    ux /= u_conv_fact
+    uy /= u_conv_fact
+    uz /= u_conv_fact
+    pressure /= p_conv_fact # please check this...
     outfilename = 'velocityAndPressure'+str(i)+'.vtk'
     dims = (Nx,Ny,Nz)
     writeVTK(pressure,ux,uy,uz,XX,YY,ZZ,outfilename,dims)
