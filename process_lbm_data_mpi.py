@@ -1,4 +1,4 @@
-#!/p/home/sblair/anaconda/bin/python
+#!/usr/bin/env python
 """
 Data processing script for LBM binary data files.
 
